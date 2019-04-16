@@ -2,10 +2,6 @@ import com.google.common.io.Files;
 import org.openqa.selenium.OutputType;
 import org.openqa.selenium.TakesScreenshot;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.firefox.FirefoxDriver;
-import org.openqa.selenium.opera.OperaDriver;
-import org.openqa.selenium.opera.OperaOptions;
 import org.openqa.selenium.support.events.AbstractWebDriverEventListener;
 
 import java.io.File;
@@ -25,25 +21,6 @@ public class BrowsersFactory {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-        }
-    }
-
-    public static WebDriver buildDriver(String browserName) {
-        switch (browserName) {
-
-            case "chrome":
-                return new ChromeDriver();
-
-            case "firefox":
-                return new FirefoxDriver();
-
-            case "opera":
-                OperaOptions operaOptions = new OperaOptions();
-                operaOptions.setBinary(new File(System.getProperty("operaPath")));
-                return new OperaDriver(operaOptions);
-
-            default:
-                return new ChromeDriver();
         }
     }
 }

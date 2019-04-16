@@ -1,4 +1,5 @@
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.support.events.EventFiringWebDriver;
 
 import java.util.concurrent.TimeUnit;
@@ -6,7 +7,6 @@ import java.util.concurrent.TimeUnit;
 public class Application {
 
     protected WebDriver driver;
-    private final String browserName = System.getProperty("browser");
 
 
     public Application() {
@@ -22,7 +22,7 @@ public class Application {
     }
 
     private WebDriver getDriver() {
-        return BrowsersFactory.buildDriver(browserName);
+        return new ChromeDriver();
     }
 
 }
