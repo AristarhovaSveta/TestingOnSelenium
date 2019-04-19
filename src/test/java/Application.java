@@ -10,10 +10,11 @@ public class Application {
 
 
     public Application() {
-        driver = new EventFiringWebDriver(getDriver());
-        ((EventFiringWebDriver) driver).register(new BrowsersFactory.MyListener());
-        driver.manage().window().maximize();
-        driver.manage().timeouts().implicitlyWait(5, TimeUnit.SECONDS);
+        EventFiringWebDriver driver = new EventFiringWebDriver(getDriver());
+        driver.register(new EventListener());
+        this.driver = driver;
+        this.driver.manage().window().maximize();
+        this.driver.manage().timeouts().implicitlyWait(5, TimeUnit.SECONDS);
     }
 
     public void quit() {

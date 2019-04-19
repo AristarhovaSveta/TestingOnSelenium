@@ -1,18 +1,19 @@
-import ui.Checkbox;
-import ui.Select;
-import ui.TextInput;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
 import org.junit.Test;
-import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.PageFactory;
+import ui.GoogleSearchPage;
+import ui.MobilePage;
+import ui.RegionPage;
+import ui.VacanciesPage;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
 
+@Slf4j
 public class VacanciesTest extends BaseRunner {
     private WebDriver driver;
     private String baseUrl;
@@ -27,53 +28,37 @@ public class VacanciesTest extends BaseRunner {
     @Test
     public void test1() {
         driver.get(baseUrl);
-        driver.findElement(By.xpath("//input[@name='name']")).click();
-        driver.findElement(By.xpath("//input[@name='birthday']")).click();
-        driver.findElement(By.xpath("//input[@name='city']")).click();
-        driver.findElement(By.xpath("//input[@name='email']")).click();
-        driver.findElement(By.xpath("//input[@name='phone']")).click();
-        driver.findElement(By.xpath("(.//*[normalize-space(text()) and normalize-space(.)='Перетащите файлы сюда'])[1]/following::span[2]")).click();
-        driver.findElement(By.xpath("//input[@name='socialLink0']")).click();
-        driver.findElement(By.xpath("(.//*[normalize-space(text()) and normalize-space(.)='условиями передачи информации'])[1]/following::span[1]")).click();
-        List<WebElement> allErrors = driver.findElements(By.xpath("//*[@class='ui-form-field-error-message ui-form-field-error-message_ui-form']"));
-        for (WebElement error: allErrors) {
-            assertEquals("Поле обязательное", error.getText());
+        VacanciesPage vacanciesPage = PageFactory.initElements(driver, VacanciesPage.class);
+        vacanciesPage.clickAllInputs();
+        for (String errorText: vacanciesPage.getErrorsText()) {
+            assertEquals("Поле обязательное", errorText);
         }
     }
 
     @Test
     public void test2() {
         driver.get(baseUrl);
-        driver.findElement(By.xpath("//input[@name='name']")).click();
-        driver.findElement(By.xpath("//input[@name='name']")).clear();
-        driver.findElement(By.xpath("//input[@name='name']")).sendKeys("1123");
-        driver.findElement(By.xpath("//input[@name='birthday']")).click();
-        driver.findElement(By.xpath("//input[@name='birthday']")).clear();
-        driver.findElement(By.xpath("//input[@name='birthday']")).sendKeys("31.13.333");
-        driver.findElement(By.xpath("//input[@name='email']")).click();
-        driver.findElement(By.xpath("//input[@name='email']")).clear();
-        driver.findElement(By.xpath("//input[@name='email']")).sendKeys("привет");
-        driver.findElement(By.xpath("//input[@name='phone']")).click();
-        driver.findElement(By.xpath("//input[@name='phone']")).clear();
-        driver.findElement(By.xpath("//input[@name='phone']")).sendKeys("000");
-        driver.findElement(By.xpath("(.//*[normalize-space(text()) and normalize-space(.)='Заполните анкету'])[1]/following::div[2]")).click();
-        List<WebElement> allErrors = driver.findElements(By.xpath("//*[@class='ui-form-field-error-message ui-form-field-error-message_ui-form']"));
-        assertEquals("Допустимо использовать только буквы русского алфавита и дефис", allErrors.get(0).getText());
-        assertEquals("Поле заполнено некорректно", allErrors.get(1).getText());
-        assertEquals("Введите корректный адрес эл. почты", allErrors.get(2).getText());
-        assertEquals("Номер телефона должен состоять из 10 цифр, начиная с кода оператора", allErrors.get(3).getText());
+        VacanciesPage vacanciesPage = PageFactory.initElements(driver, VacanciesPage.class);
+        vacanciesPage.inputName("1123");
+        vacanciesPage.inputBirthday("31.13.333");
+        vacanciesPage.inputEmail("привет");
+        vacanciesPage.inputPhone("000");
+        vacanciesPage.clickPageSpace();
+        List<String> errors = vacanciesPage.getErrorsText();
+        assertEquals("Допустимо использовать только буквы русского алфавита и дефис", errors.get(0));
+        assertEquals("Поле заполнено некорректно", errors.get(1));
+        assertEquals("Введите корректный адрес эл. почты", errors.get(2));
+        assertEquals("Номер телефона должен состоять из 10 цифр, начиная с кода оператора", errors.get(3));
     }
 
     @Test
     public void test21() {
         driver.get("https://www.google.ru/");
-        WebElement googleSearch = driver.findElement(By.xpath("//input[@name='q']"));
-        TextInput textInput = new TextInput(googleSearch);
-        textInput.clear();
-        textInput.inputText("мобайл тинькофф");
-        textInput.inputText(" ");
-        driver.findElement(By.xpath("//b[text()[contains(., 'тарифы')]]")).click();
-        driver.findElement(By.xpath("//cite[text()[contains(., 'https://www.tinkoff.ru/mobile-operator/tariffs/')]]")).click();
+        GoogleSearchPage googleSearchPage = PageFactory.initElements(driver, GoogleSearchPage.class);
+        googleSearchPage.inputQuery("мобайл тинькофф");
+        googleSearchPage.inputQuery(" ");
+        googleSearchPage.chooseHint();
+        googleSearchPage.chooseRef();
         String[] tabs = driver.getWindowHandles().toArray(new String[0]);
         driver.switchTo().window(tabs[1]);
         assertEquals("Тарифы Тинькофф Мобайла", driver.getTitle());
@@ -85,68 +70,36 @@ public class VacanciesTest extends BaseRunner {
     @Test
     public void test22() {
         driver.get("https://www.tinkoff.ru/mobile-operator/tariffs/");
-
-        driver.findElement(By.xpath("//*[text()[contains(., 'Нет, изменить')]]")).click();
-        WebElement allRegions = driver.findElement(By.xpath("(//*[@data-qa-file='MobileOperatorRegionsPopup'])[4]"));
-        allRegions.findElements(By.xpath("//*[.='Москва и Московская обл.']")).get(0).click();
-        String regionText = driver.findElement(By.xpath("//div[@data-qa-file='MvnoRegionConfirmation']")).getText();
+        MobilePage mobilePage = new MobilePage(driver);
+        mobilePage.clickRegionNotAgreementButton();
+        RegionPage regionPage = PageFactory.initElements(driver, RegionPage.class);
+        regionPage.chooseMoscow();
+        String regionText = mobilePage.getCurrentRegion();
         assertEquals("Москва и Московская область", regionText);
         driver.navigate().refresh();
-        regionText = driver.findElement(By.xpath("//div[@data-qa-file='MvnoRegionConfirmation']")).getText();
+        regionText = mobilePage.getCurrentRegion();
         assertEquals("Москва и Московская область", regionText);
 
-        String moscowDefaultPrice = driver.findElement(By.xpath("//form[@data-qa-file='UIForm']//h3[@data-qa-file='UITitle']")).getText();
-
-        driver.findElement(By.xpath("//*[.='Москва и Московская область']")).click();
-        allRegions = driver.findElement(By.xpath("(//*[@data-qa-file='MobileOperatorRegionsPopup'])[4]"));
-        allRegions.findElements(By.xpath("//*[.='Краснодарский кр.']")).get(0).click();
-        String krasnodarDefaultPrice = driver.findElement(By.xpath("//form[@data-qa-file='UIForm']//h3[@data-qa-file='UITitle']")).getText();
-
+        String moscowDefaultPrice = mobilePage.getPrice();
+        mobilePage.clickChangeRegion();
+        regionPage.chooseKrasnodar();
+        String krasnodarDefaultPrice = mobilePage.getCurrentRegion();
         assertNotEquals(moscowDefaultPrice, krasnodarDefaultPrice);
 
-        WebElement internetSelectWebElement = driver.findElement(By.xpath("//span[text()[contains(., 'Интернет')]]"));
-        ArrayList<WebElement> internetOptions = new ArrayList<>(driver.findElements(By.xpath("(//div[@class='ui-dropdown-field-list' and @data-qa-file='UIDropdownList'])[1]//div[@class='ui-dropdown-field-list__item']")));
-        Select internetSelect = new Select(internetSelectWebElement, internetOptions, 1);
-        internetSelect.selectOptionByIndex(5);
+        mobilePage.selectInternet(5);
+        mobilePage.selectRing(5);
+        mobilePage.changeModemCheckbox();
+        mobilePage.changeBezlimSmsCheckbox();
+        String krasnodarMaximumPrice = mobilePage.getPrice();
 
-        WebElement ringsSelectWebElement = driver.findElement(By.xpath("//span[text()[contains(., 'Звонки')]]"));
-        ArrayList<WebElement> ringsOptions = new ArrayList<>(driver.findElements(By.xpath("(//div[@class='ui-dropdown-field-list' and @data-qa-file='UIDropdownList'])[2]//div[@class='ui-dropdown-field-list__item']")));
-        Select ringsSelect = new Select(ringsSelectWebElement, ringsOptions, 1);
-        ringsSelect.selectOptionByIndex(5);
+        mobilePage.clickChangeRegion();
+        regionPage.chooseMoscow();
+        mobilePage.selectInternet(5);
+        mobilePage.selectRing(5);
+        mobilePage.changeModemCheckbox();
+        mobilePage.changeBezlimSmsCheckbox();
 
-        WebElement modemCheckboxWebElement = driver.findElement(By.xpath("(//div[@data-qa-file='UIForm']//div[@data-qa-file='CheckboxSet'])[3]"));
-        Checkbox modemCheckbox = new Checkbox(modemCheckboxWebElement);
-        modemCheckbox.change();
-
-        WebElement bezlimSmsCheckbox = driver.findElement(By.xpath("(//div[@data-qa-file='UIForm']//div[@data-qa-file='CheckboxSet'])[6]"));
-        Checkbox bezlimSms = new Checkbox(bezlimSmsCheckbox);
-        bezlimSms.change();
-
-        String krasnodarMaximumPrice = driver.findElement(By.xpath("//form[@data-qa-file='UIForm']//h3[@data-qa-file='UITitle']")).getText();
-
-        driver.findElement(By.xpath("//*[.='Краснодарский край']")).click();
-        allRegions = driver.findElement(By.xpath("(//*[@data-qa-file='MobileOperatorRegionsPopup'])[4]"));
-        allRegions.findElements(By.xpath("//*[.='Москва и Московская обл.']")).get(0).click();
-        internetSelectWebElement = driver.findElement(By.xpath("//span[text()[contains(., 'Интернет')]]"));
-        internetOptions = new ArrayList<>(driver.findElements(By.xpath("(//div[@class='ui-dropdown-field-list' and @data-qa-file='UIDropdownList'])[1]//div[@class='ui-dropdown-field-list__item']")));
-        internetSelect = new Select(internetSelectWebElement, internetOptions, 1);
-        internetSelect.selectOptionByIndex(5);
-
-        ringsSelectWebElement = driver.findElement(By.xpath("//span[text()[contains(., 'Звонки')]]"));
-        ringsOptions = new ArrayList<>(driver.findElements(By.xpath("(//div[@class='ui-dropdown-field-list' and @data-qa-file='UIDropdownList'])[2]//div[@class='ui-dropdown-field-list__item']")));
-        ringsSelect = new Select(ringsSelectWebElement, ringsOptions, 1);
-        ringsSelect.selectOptionByIndex(5);
-
-        modemCheckboxWebElement = driver.findElement(By.xpath("(//div[@data-qa-file='UIForm']//div[@data-qa-file='CheckboxSet'])[3]"));
-        modemCheckbox = new Checkbox(modemCheckboxWebElement);
-        modemCheckbox.change();
-
-        bezlimSmsCheckbox = driver.findElement(By.xpath("(//div[@data-qa-file='UIForm']//div[@data-qa-file='CheckboxSet'])[6]"));
-        bezlimSms = new Checkbox(bezlimSmsCheckbox);
-        bezlimSms.change();
-
-        String moscowMaximumPrice = driver.findElement(By.xpath("//form[@data-qa-file='UIForm']//h3[@data-qa-file='UITitle']")).getText();
-
+        String moscowMaximumPrice = mobilePage.getPrice();
         assertEquals(moscowMaximumPrice, krasnodarMaximumPrice);
     }
 
@@ -154,31 +107,20 @@ public class VacanciesTest extends BaseRunner {
     public void test23() {
         driver.get("https://www.tinkoff.ru/mobile-operator/tariffs/");
 
-        driver.findElement(By.xpath("//*[text()[contains(., 'Нет, изменить')]]")).click();
-        WebElement allRegions = driver.findElement(By.xpath("(//*[@data-qa-file='MobileOperatorRegionsPopup'])[4]"));
-        allRegions.findElements(By.xpath("//*[.='Москва и Московская обл.']")).get(0).click();
-        WebElement internetSelectWebElement = driver.findElement(By.xpath("//span[text()[contains(., 'Интернет')]]"));
-        ArrayList<WebElement> internetOptions = new ArrayList<>(driver.findElements(By.xpath("(//div[@class='ui-dropdown-field-list' and @data-qa-file='UIDropdownList'])[1]//div[@class='ui-dropdown-field-list__item']")));
-        Select internetSelect = new Select(internetSelectWebElement, internetOptions, 1);
-        internetSelect.selectOptionByIndex(0);
+        MobilePage mobilePage = new MobilePage(driver);
+        mobilePage.clickRegionNotAgreementButton();
+        RegionPage regionPage = PageFactory.initElements(driver, RegionPage.class);
+        regionPage.chooseMoscow();
+        mobilePage.selectInternet(0);
+        mobilePage.selectRing(0);
 
-        WebElement ringsSelectWebElement = driver.findElement(By.xpath("//span[text()[contains(., 'Звонки')]]"));
-        ArrayList<WebElement> ringsOptions = new ArrayList<>(driver.findElements(By.xpath("(//div[@class='ui-dropdown-field-list' and @data-qa-file='UIDropdownList'])[2]//div[@class='ui-dropdown-field-list__item']")));
-        Select ringsSelect = new Select(ringsSelectWebElement, ringsOptions, 1);
-        ringsSelect.selectOptionByIndex(0);
+        mobilePage.changeMessengersCheckbox();
+        mobilePage.changeSocialsCheckbox();
 
-        WebElement modemCheckboxWebElement = driver.findElement(By.xpath("(//div[@data-qa-file='UIForm']//div[@data-qa-file='CheckboxSet'])[3]"));
-        Checkbox modemCheckbox = new Checkbox(modemCheckboxWebElement);
-        modemCheckbox.change();
-
-        WebElement bezlimSmsCheckbox = driver.findElement(By.xpath("(//div[@data-qa-file='UIForm']//div[@data-qa-file='CheckboxSet'])[6]"));
-        Checkbox bezlimSms = new Checkbox(bezlimSmsCheckbox);
-        bezlimSms.change();
-
-        String minPrice = driver.findElement(By.xpath("//form[@data-qa-file='UIForm']//h3[@data-qa-file='UITitle']")).getText();
+        String minPrice = mobilePage.getPrice();
 
         assertEquals("Общая цена: 0 \u20BD", minPrice);
-        assertTrue(driver.findElement(By.xpath("//div[@data-qa-file='BlockingButton']//button")).isEnabled());
+        assertTrue(mobilePage.getOrderSimCardButtonIsEnabled());
     }
 
 
